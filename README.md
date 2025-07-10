@@ -4,8 +4,8 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](https://github.com/NDXDev/todo-cli-go)
-[![Release](https://img.shields.io/github/v/release/NDXDev/todo-cli-go?style=for-the-badge)](https://github.com/NDXDev/todo-cli-go/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](https://github.com/NDXDeveloper/todo-cli-go)
+[![Release](https://img.shields.io/github/v/release/NDXDeveloper/todo-cli-go?style=for-the-badge)](https://github.com/NDXDeveloper/todo-cli-go/releases)
 
 ## 🎯 Aperçu
 
@@ -37,19 +37,19 @@
 
 ```bash
 # Linux/macOS
-curl -L https://github.com/NDXDev/todo-cli-go/releases/latest/download/todo-linux -o todo
+curl -L https://github.com/NDXDeveloper/todo-cli-go/releases/latest/download/todo-linux -o todo
 chmod +x todo
 sudo mv todo /usr/local/bin/
 
 # Windows (PowerShell)
-Invoke-WebRequest -Uri "https://github.com/NDXDev/todo-cli-go/releases/latest/download/todo-windows.exe" -OutFile "todo.exe"
+Invoke-WebRequest -Uri "https://github.com/NDXDeveloper/todo-cli-go/releases/latest/download/todo-windows.exe" -OutFile "todo.exe"
 ```
 
 ### Option 2 : Compiler depuis les sources
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/NDXDev/todo-cli-go.git
+git clone https://github.com/NDXDeveloper/todo-cli-go.git
 cd todo-cli-go
 
 # Compiler
@@ -62,7 +62,7 @@ sudo mv todo /usr/local/bin/
 ### Option 3 : Installation via Go
 
 ```bash
-go install github.com/NDXDev/todo-cli-go@latest
+go install github.com/NDXDeveloper/todo-cli-go@latest
 ```
 
 ## 📖 Guide d'utilisation
@@ -301,7 +301,10 @@ GOOS=windows GOARCH=amd64 go build -o todo-windows.exe *.go
 # macOS
 GOOS=darwin GOARCH=amd64 go build -o todo-macos *.go
 
-# Architecture actuelle
+# Compilation simple
+make build
+
+# Ou manuellement
 go build -o todo *.go
 ```
 
@@ -316,6 +319,18 @@ go test -cover ./...
 
 # Benchmark
 go test -bench=. ./...
+
+# Tests rapides
+make test-short
+
+# Suite complète de tests
+make test
+
+# Tests avec couverture
+make test-coverage
+
+# Tests CLI uniquement
+make test-cli
 ```
 
 ## 🤝 Contribution
@@ -356,8 +371,8 @@ Les contributions sont les bienvenues ! Voici comment participer :
 
 Si vous rencontrez un problème :
 
-1. Vérifiez les [issues existantes](https://github.com/NDXDev/todo-cli-go/issues)
-2. Créez une [nouvelle issue](https://github.com/NDXDev/todo-cli-go/issues/new) avec :
+1. Vérifiez les [issues existantes](https://github.com/NDXDeveloper/todo-cli-go/issues)
+2. Créez une [nouvelle issue](https://github.com/NDXDeveloper/todo-cli-go/issues/new) avec :
    - Description détaillée du problème
    - Commande exacte utilisée
    - Comportement attendu vs actuel
@@ -384,4 +399,4 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ⭐ **N'hésitez pas à mettre une étoile si ce projet vous plaît !**
 
-[![GitHub stars](https://img.shields.io/github/stars/NDXDev/todo-cli-go?style=social)](https://github.com/NDXDev/todo-cli-go/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/NDXDeveloper/todo-cli-go?style=social)](https://github.com/NDXDev/todo-cli-go/stargazers)

@@ -12,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-
 )
 
 // Task représente une tâche
@@ -108,17 +106,18 @@ func (tm *TodoManager) Add(text string, tags []string, priority string, due stri
 	task := Task{
 		ID:       tm.NextID,
 		UUID:     generateUUID(),
-		Text:     text,  // Texte intact, AUCUN nettoyage
+		Text:     text, // Texte intact, AUCUN nettoyage
 		Done:     false,
 		Priority: priority,
 		Due:      due,
-		Tags:     tags,  // Tags passés en arguments uniquement
+		Tags:     tags, // Tags passés en arguments uniquement
 		Created:  time.Now().Format("2006-01-02 15:04:05"),
 		Updated:  time.Now().Format("2006-01-02 15:04:05"),
 	}
 
 	tm.Tasks = append(tm.Tasks, task)
 	tm.NextID++
+	task.Updated = time.Now().Format("2006-01-02 15:04:05")
 	tm.save()
 
 	// Debug - afficher ce qui est sauvegardé

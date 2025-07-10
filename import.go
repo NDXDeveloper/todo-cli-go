@@ -431,43 +431,43 @@ func (tm *TodoManager) isNewer(date1, date2 string) bool {
 func AddImportCommand() {
 	// Cette fonction sera intégrée dans le switch case du main()
 	/*
-	case "import":
-		if len(os.Args) < 3 {
-			fmt.Println("❌ Usage: todo import <fichier.csv> [--mode=merge|replace] [--conflict=skip|update|newer] [--dry-run] [--verbose]")
-			os.Exit(1)
-		}
+		case "import":
+			if len(os.Args) < 3 {
+				fmt.Println("❌ Usage: todo import <fichier.csv> [--mode=merge|replace] [--conflict=skip|update|newer] [--dry-run] [--verbose]")
+				os.Exit(1)
+			}
 
-		filename := os.Args[2]
+			filename := os.Args[2]
 
-		// Parse des flags
-		importFlags := flag.NewFlagSet("import", flag.ExitOnError)
-		mode := importFlags.String("mode", "merge", "Mode d'import (merge, replace)")
-		conflict := importFlags.String("conflict", "skip", "Stratégie de conflit (skip, update, newer)")
-		dryRun := importFlags.Bool("dry-run", false, "Aperçu sans modification")
-		verbose := importFlags.Bool("verbose", false, "Mode verbeux")
+			// Parse des flags
+			importFlags := flag.NewFlagSet("import", flag.ExitOnError)
+			mode := importFlags.String("mode", "merge", "Mode d'import (merge, replace)")
+			conflict := importFlags.String("conflict", "skip", "Stratégie de conflit (skip, update, newer)")
+			dryRun := importFlags.Bool("dry-run", false, "Aperçu sans modification")
+			verbose := importFlags.Bool("verbose", false, "Mode verbeux")
 
-		importFlags.Parse(os.Args[3:])
+			importFlags.Parse(os.Args[3:])
 
-		// Valider les paramètres
-		if *mode != "merge" && *mode != "replace" {
-			fmt.Println("❌ Mode invalide. Utilisez 'merge' ou 'replace'")
-			os.Exit(1)
-		}
+			// Valider les paramètres
+			if *mode != "merge" && *mode != "replace" {
+				fmt.Println("❌ Mode invalide. Utilisez 'merge' ou 'replace'")
+				os.Exit(1)
+			}
 
-		if *conflict != "skip" && *conflict != "update" && *conflict != "newer" {
-			fmt.Println("❌ Stratégie de conflit invalide. Utilisez 'skip', 'update' ou 'newer'")
-			os.Exit(1)
-		}
+			if *conflict != "skip" && *conflict != "update" && *conflict != "newer" {
+				fmt.Println("❌ Stratégie de conflit invalide. Utilisez 'skip', 'update' ou 'newer'")
+				os.Exit(1)
+			}
 
-		options := ImportOptions{
-			DryRun:  *dryRun,
-			Verbose: *verbose,
-		}
+			options := ImportOptions{
+				DryRun:  *dryRun,
+				Verbose: *verbose,
+			}
 
-		_, err := tm.ImportCSV(filename, *mode, *conflict, options)
-		if err != nil {
-			fmt.Printf("❌ Erreur lors de l'import : %v\n", err)
-			os.Exit(1)
-		}
+			_, err := tm.ImportCSV(filename, *mode, *conflict, options)
+			if err != nil {
+				fmt.Printf("❌ Erreur lors de l'import : %v\n", err)
+				os.Exit(1)
+			}
 	*/
 }
