@@ -47,6 +47,9 @@ run: build ## Compiler et lancer l'application
 install: build ## Installer le binaire dans $GOPATH/bin
 	cp $(BINARY_NAME) $(GOPATH)/bin/
 
+uninstall: build ## Installer le binaire dans $GOPATH/bin
+	rm $(GOPATH)/bin/$(BINARY_NAME)
+
 clean: ## Nettoyer les fichiers générés
 	rm -f $(BINARY_NAME)
 	rm -f coverage.out coverage.html

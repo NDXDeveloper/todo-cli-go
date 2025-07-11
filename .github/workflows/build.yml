@@ -135,7 +135,7 @@ jobs:
         body: |
           ## 🚀 Todo CLI Go ${{ github.ref_name }}
 
-          Gestionnaire de tâches en ligne de commande avec injection de version automatique.
+          Gestionnaire de tâches en ligne de commande.
 
           ### 📦 Téléchargements
 

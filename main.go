@@ -64,6 +64,67 @@ const (
 	ColorBold   = "\033[1m"
 )
 
+// Clear supprime toutes les tâches avec confirmation
+func (tm *TodoManager) Clear(force bool) {
+	if len(tm.Tasks) == 0 {
+		fmt.Println("📝 Aucune tâche à supprimer")
+		return
+	}
+
+	if !force {
+		fmt.Printf("⚠️  Voulez-vous vraiment supprimer toutes les %d tâches ? (y/N) ", len(tm.Tasks))
+		var response string
+		fmt.Scanln(&response)
+
+		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
+			fmt.Println("❌ Suppression annulée")
+			return
+		}
+	}
+
+	count := len(tm.Tasks)
+	tm.Tasks = []Task{}
+	tm.NextID = 1
+	tm.save()
+
+	fmt.Printf("🗑️  Toutes les tâches supprimées (%d tâches)\n", count)
+}
+
+// ClearDone supprime uniquement les tâches terminées
+func (tm *TodoManager) ClearDone(force bool) {
+	var doneTasks []Task
+	var remainingTasks []Task
+
+	for _, task := range tm.Tasks {
+		if task.Done {
+			doneTasks = append(doneTasks, task)
+		} else {
+			remainingTasks = append(remainingTasks, task)
+		}
+	}
+
+	if len(doneTasks) == 0 {
+		fmt.Println("📝 Aucune tâche terminée à supprimer")
+		return
+	}
+
+	if !force {
+		fmt.Printf("⚠️  Voulez-vous vraiment supprimer toutes les %d tâches terminées ? (y/N) ", len(doneTasks))
+		var response string
+		fmt.Scanln(&response)
+
+		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
+			fmt.Println("❌ Suppression annulée")
+			return
+		}
+	}
+
+	tm.Tasks = remainingTasks
+	tm.save()
+
+	fmt.Printf("🗑️  Tâches terminées supprimées (%d tâches)\n", len(doneTasks))
+}
+
 // NewTodoManager crée un nouveau gestionnaire de tâches
 func NewTodoManager() *TodoManager {
 	homeDir, err := os.UserHomeDir()
@@ -361,6 +422,8 @@ Usage:
   todo edit <id> "Nouveau texte" [+projet] [@contexte]
   todo export [filename.csv]
   todo import <fichier.csv> [--mode=merge|replace] [--conflict=skip|update|newer] [--dry-run] [--verbose]
+  todo clear [--done] [--force]
+  todo reset
 
 Options pour add:
   --priority, -p    Priorité (low, medium, high)
@@ -383,6 +446,10 @@ Options pour import:
   --dry-run           Aperçu sans modification
   --verbose           Mode verbeux avec détails
 
+Options pour clear:
+  --done           Supprimer uniquement les tâches terminées
+  --force, -f      Supprimer sans demander confirmation
+
 Exemples d'import:
   todo import backup.csv
   todo import tasks.csv --mode=merge --conflict=newer
@@ -399,6 +466,10 @@ Exemples:
   todo done 1
   todo remove 2
   todo edit 3 "Nouvelle description" +urgent @bureau
+  todo clear                    # Supprimer toutes les tâches (avec confirmation)
+  todo clear --force            # Supprimer toutes les tâches sans confirmation
+  todo clear --done             # Supprimer uniquement les tâches terminées
+  todo reset                    # Supprimer toutes les tâches sans confirmation (alias)
 
 Note: Les tags dans le texte ne sont PAS interprétés.
 Seuls les arguments +tag @tag après le texte sont utilisés comme tags.`)
@@ -588,6 +659,27 @@ func main() {
 		}
 
 		fmt.Printf("📄 Export terminé : %s\n", filename)
+
+
+	case "clear":
+		clearFlags := flag.NewFlagSet("clear", flag.ExitOnError)
+		force := clearFlags.Bool("force", false, "Supprimer sans confirmation")
+		forceShort := clearFlags.Bool("f", false, "Supprimer sans confirmation (alias)")
+		doneOnly := clearFlags.Bool("done", false, "Supprimer uniquement les tâches terminées")
+
+		clearFlags.Parse(os.Args[2:])
+
+		forceDelete := *force || *forceShort
+
+		if *doneOnly {
+			tm.ClearDone(forceDelete)
+		} else {
+			tm.Clear(forceDelete)
+		}
+
+	case "reset":
+		// Alias pour clear --force
+		tm.Clear(true)
 
 	case "version":
 		fmt.Printf("Todo CLI Go %s\n", version)
