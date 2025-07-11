@@ -39,3 +39,11 @@ profile.out
 # Fichiers d'export
 *.csv
 export_*
+
+# Fichiers générés
+version.go
+todo
+*.exe
+
+# Garder VERSION dans Git
+!VERSION

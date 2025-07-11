@@ -14,6 +14,12 @@ import (
 	"time"
 )
 
+var (
+	version   = "dev"     // Version par défaut
+	buildTime = "unknown" // Date de build
+	gitCommit = "unknown" // Hash du commit
+)
+
 // Task représente une tâche
 type Task struct {
 	ID       int      `json:"id"`
@@ -341,6 +347,10 @@ func validateDate(dateStr string) bool {
 
 // Usage affiche l'aide
 func Usage() {
+	fmt.Printf("Todo CLI Go v%s\n", version)
+	fmt.Printf("Build time: %s\n", buildTime)
+	fmt.Printf("Git commit: %s\n", gitCommit)
+
 	fmt.Println(`📋 Todo Manager CLI
 
 Usage:
@@ -584,6 +594,7 @@ func main() {
 
 	default:
 		fmt.Printf("❌ Commande inconnue : %s\n", command)
+
 		Usage()
 		os.Exit(1)
 	}
