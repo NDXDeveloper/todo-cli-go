@@ -1,10 +1,10 @@
-# .github/workflows/build.yml
+# .github/workflows/build.yml - Avec Snap
 name: Build Todo CLI Go
 
 on:
   push:
     branches: [ main, develop ]
-    tags: [ 'v*' ]  # Déclenche sur tous les tags v*
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -16,7 +16,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Important pour récupérer l'historique Git complet
+        fetch-depth: 0
 
     - name: Setup Go
       uses: actions/setup-go@v4
@@ -48,13 +48,12 @@ jobs:
         path: todo
         retention-days: 30
 
-  # Job séparé pour les releases avec tags
+  # Job pour releases avec binaires + snap
   release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
 
-    # Permissions spécifiques pour ce job
     permissions:
       contents: write
 
@@ -69,6 +68,7 @@ jobs:
       with:
         go-version: '1.22'
 
+    # Build des binaires classiques
     - name: Build release binaries
       run: |
         echo "Building release binaries..."
@@ -88,6 +88,19 @@ jobs:
         # Vérifier les binaires créés
         ls -la todo-*
 
+    # Build du Snap
+    - name: Build Snap
+      uses: snapcore/action-build@v1
+      id: build-snap
+
+    - name: Rename snap file
+      run: |
+        # Renommer le snap avec le nom du tag
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        mv *.snap todo-cli-go_${TAG_NAME}_amd64.snap
+        ls -la *.snap
+
+    # Créer la release avec tous les formats
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
@@ -95,76 +108,138 @@ jobs:
           todo-linux-amd64
           todo-windows-amd64.exe
           todo-darwin-amd64
+          *.snap
         generate_release_notes: true
         body: |
-                ## 🚀 Todo CLI Go ${{ github.ref_name }}
+          ## 🚀 Todo CLI Go ${{ github.ref_name }}
 
-                Gestionnaire de tâches en ligne de commande avec injection de version automatique.
+          Gestionnaire de tâches en ligne de commande avec injection de version automatique.
 
-                ### 📦 Téléchargements
-                - **Linux**: `todo-linux-amd64`
-                - **Windows**: `todo-windows-amd64.exe`
-                - **macOS**: `todo-darwin-amd64`
+          ### 📦 Téléchargements
 
-                ### 🛠️ Installation
+          #### Binaires classiques
+          - **Linux**: `todo-linux-amd64`
+          - **Windows**: `todo-windows-amd64.exe`
+          - **macOS**: `todo-darwin-amd64`
 
-                #### Linux / macOS
-                ```bash
-                # Télécharger et rendre exécutable
-                chmod +x todo-linux-amd64
+          #### Package Snap (Linux)
+          - **Snap**: `todo-cli-go_${{ github.ref_name }}_amd64.snap`
 
-                # Test local
-                ./todo-linux-amd64 help
+          ### 🛠️ Installation
 
-                # Installation globale (optionnelle)
-                sudo mv todo-linux-amd64 /usr/local/bin/todo
+          #### Linux / macOS
+          ```bash
+          # Télécharger et rendre exécutable
+          chmod +x todo-linux-amd64
 
-                # Utilisation globale
-                todo help
-                ```
+          # Test local
+          ./todo-linux-amd64 help
 
-                #### Windows
-                ```powershell
-                # 1. Créer un dossier pour vos binaires (une seule fois)
-                mkdir C:\tools
+          # Installation globale (optionnelle)
+          sudo mv todo-linux-amd64 /usr/local/bin/todo
 
-                # 2. Déplacer le binaire
-                move todo-windows-amd64.exe C:\tools\todo.exe
+          # Utilisation globale
+          todo help
+          ```
 
-                # 3. Ajouter au PATH (PowerShell Admin requis)
-                $env:PATH += ";C:\tools"
+          #### Installation Snap (Linux) - Confinement strict
+          ```bash
+          # Télécharger le fichier .snap
+          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-cli-go_${{ github.ref_name }}_amd64.snap
 
-                # 4. Rendre permanent (PowerShell Admin)
-                [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\tools", [EnvironmentVariableTarget]::Machine)
+          # Installer le snap (mode dangerous car non publié sur store)
+          sudo snap install --dangerous todo-cli-go_${{ github.ref_name }}_amd64.snap
 
-                # 5. Redémarrer PowerShell/CMD et tester
-                todo help
-                ```
+          # Connecter les interfaces pour accès étendus
+          sudo snap connect todo-cli-go:removable-media     # Clés USB
+          sudo snap connect todo-cli-go:mount-observe       # Points de montage
+          sudo snap connect todo-cli-go:network-bind        # Réseau (optionnel)
 
-                #### Alternative Windows (Interface graphique)
-                ```
-                1. Déplacer todo-windows-amd64.exe vers C:\tools\todo.exe
-                2. Touche Windows + R → sysdm.cpl → Avancé
-                3. Variables d'environnement → PATH (système) → Modifier
-                4. Ajouter : C:\tools
-                5. OK → OK → Redémarrer terminal
-                6. Tester : todo help
-                ```
+          # Vérifier les connexions
+          snap connections todo-cli-go
 
-                #### Installation rapide (tous OS)
-                ```bash
-                # Linux/macOS : Un seul command
-                curl -L https://github.com/NDXDeveloper/todo-cli-go/releases/latest/download/todo-linux-amd64 -o todo && chmod +x todo && sudo mv todo /usr/local/bin/
+          # Utilisation
+          todo-cli-go version
+          # Ou avec l'alias court
+          todo version
 
-                # Windows (PowerShell) : Téléchargement + installation
-                Invoke-WebRequest -Uri "https://github.com/NDXDeveloper/todo-cli-go/releases/latest/download/todo-windows-amd64.exe" -OutFile "C:\tools\todo.exe"
-                ```
+          # Test d'accès aux clés USB (après connexion interface)
+          todo export /media/username/USB_DRIVE/backup.csv
+          ```
 
-                ### ✨ Fonctionnalités
-                - Gestion complète des tâches (add, list, done, remove, edit)
-                - Export/Import CSV
-                - Tags et priorités
-                - Filtrage avancé
-                - Version injectée automatiquement
+          #### Windows
+          ```powershell
+          # 1. Créer un dossier pour vos binaires (une seule fois)
+          mkdir C:\tools
+
+          # 2. Déplacer le binaire
+          move todo-windows-amd64.exe C:\tools\todo.exe
+
+          # 3. Ajouter au PATH (PowerShell Admin requis)
+          $env:PATH += ";C:\tools"
+
+          # 4. Rendre permanent (PowerShell Admin)
+          [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\tools", [EnvironmentVariableTarget]::Machine)
+
+          # 5. Redémarrer PowerShell/CMD et tester
+          todo help
+          ```
+
+          #### Alternative Windows (Interface graphique)
+          ```
+          1. Déplacer todo-windows-amd64.exe vers C:\tools\todo.exe
+          2. Touche Windows + R → sysdm.cpl → Avancé
+          3. Variables d'environnement → PATH (système) → Modifier
+          4. Ajouter : C:\tools
+          5. OK → OK → Redémarrer terminal
+          6. Tester : todo help
+          ```
+
+          #### Installation rapide (tous OS)
+          ```bash
+          # Linux/macOS : Binaire direct
+          curl -L https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-linux-amd64 -o todo && chmod +x todo && sudo mv todo /usr/local/bin/
+
+          # Windows (PowerShell) : Téléchargement + installation
+          Invoke-WebRequest -Uri "https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-windows-amd64.exe" -OutFile "C:\tools\todo.exe"
+
+          # Linux Snap : Installation avec permissions
+          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-cli-go_${{ github.ref_name }}_amd64.snap
+          sudo snap install --dangerous todo-cli-go_${{ github.ref_name }}_amd64.snap
+          sudo snap connect todo-cli-go:removable-media
+          ```
+
+          ### ✨ Fonctionnalités
+          - Gestion complète des tâches (add, list, done, remove, edit)
+          - Export/Import CSV
+          - Tags et priorités
+          - Filtrage avancé
+          - Version injectée automatiquement
+
+          ### 🔐 Snap - Confinement strict avec interfaces
+
+          Le package Snap utilise un **confinement strict** pour une sécurité maximale.
+
+          **Interfaces automatiques :**
+          - 🏠 Répertoire home (`home`)
+          - 🌐 Réseau de base (`network`)
+
+          **Interfaces manuelles (optionnelles) :**
+          ```bash
+          # Pour accès aux clés USB et disques externes
+          sudo snap connect todo-cli-go:removable-media
+
+          # Pour observer les points de montage (partages réseau)
+          sudo snap connect todo-cli-go:mount-observe
+
+          # Pour écoute réseau (si nécessaire)
+          sudo snap connect todo-cli-go:network-bind
+          ```
+
+          **Vérification des permissions :**
+          ```bash
+          snap connections todo-cli-go
+          ```
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

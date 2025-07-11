@@ -1,0 +1,142 @@
+# snap/snapcraft.yaml - Confinement strict
+name: todo-cli-go
+version: git
+summary: Gestionnaire de tâches moderne en ligne de commande
+description: |
+  Todo CLI Go est un gestionnaire de tâches puissant et léger pour la ligne de commande.
+
+  Fonctionnalités:
+  - Gestion complète des tâches (add, list, done, remove, edit)
+  - Export/Import CSV avec accès aux clés USB
+  - Tags et priorités (+projet @contexte)
+  - Filtrage avancé
+  - Dates limites avec alertes visuelles
+  - Interface colorée et intuitive
+  - Stockage JSON portable
+  - Support des partages réseau
+
+  Permissions requises:
+  - home: Accès au répertoire utilisateur
+  - removable-media: Accès aux clés USB et disques externes
+  - network: Accès aux partages réseau (SMB, NFS)
+  - mount-observe: Observation des points de montage
+
+# Base système Ubuntu 22.04 LTS
+base: core22
+
+license: MIT
+source-code: https://github.com/NDXDeveloper/todo-cli-go
+issues: https://github.com/NDXDeveloper/todo-cli-go/issues
+
+# Confinement strict pour sécurité maximale
+confinement: strict
+grade: stable
+
+# Architectures supportées
+architectures:
+  - build-on: amd64
+    build-for: amd64
+
+# Applications exposées
+apps:
+  todo-cli-go:
+    command: bin/todo
+    # Plugs pour accès contrôlé aux ressources
+    plugs:
+      - home                    # Accès au répertoire home (~/)
+      - removable-media        # Accès aux clés USB (/media, /mnt)
+      - network                # Accès réseau pour partages distants
+      - network-bind           # Écoute réseau si nécessaire
+      - mount-observe          # Observer les points de montage
+    environment:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+
+  # Alias court 'todo' (plus pratique)
+  todo:
+    command: bin/todo
+    plugs:
+      - home
+      - removable-media
+      - network
+      - network-bind
+      - mount-observe
+    environment:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+
+# Définition des plugs personnalisés si nécessaire
+plugs:
+  # Accès étendu aux partages réseau
+  network-shares:
+    interface: system-files
+    read:
+      - /mnt
+      - /media
+      - /run/user/*/gvfs  # GNOME Virtual File System (partages réseau)
+    write:
+      - /mnt
+      - /media
+      - /run/user/*/gvfs
+
+# Build du snap
+parts:
+  todo-cli:
+    plugin: go
+    source: .
+    source-type: git
+    build-snaps:
+      - go/1.22/stable
+
+    # Variables de build
+    build-environment:
+      - CGO_ENABLED: "0"
+      - GOOS: linux
+      - GOARCH: amd64
+
+    # Script de build avec injection de version
+    override-build: |
+      # Récupérer les métadonnées de version
+      export VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "snap-dev")
+      export BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      export GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
+      echo "Building Todo CLI Go Snap"
+      echo "Version: $VERSION"
+      echo "Build time: $BUILD_TIME"
+      echo "Git commit: $GIT_COMMIT"
+
+      # Build avec injection de version et optimisation
+      go build \
+        -ldflags "-X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.gitCommit=$GIT_COMMIT -s -w" \
+        -o $SNAPCRAFT_PART_INSTALL/bin/todo \
+        main.go import.go
+
+      # Créer le répertoire bin s'il n'existe pas
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+
+      # Vérifier le binaire
+      echo "Binary info:"
+      ls -la $SNAPCRAFT_PART_INSTALL/bin/todo
+      file $SNAPCRAFT_PART_INSTALL/bin/todo
+
+      # Test rapide du binaire
+      echo "Testing binary:"
+      $SNAPCRAFT_PART_INSTALL/bin/todo version || echo "Version command check completed"
+
+    # Dépendances de build
+    build-packages:
+      - git
+      - ca-certificates
+      - file              # ← AJOUTÉ pour la commande 'file'
+      - coreutils         # ← AJOUTÉ pour les utilitaires de base
+
+  # Métadonnées et fichiers supplémentaires
+  metadata:
+    plugin: dump
+    source: .
+    organize:
+      README.md: meta/readme.md
+      LICENSE: meta/license.txt
+    stage:
+      - meta/*
