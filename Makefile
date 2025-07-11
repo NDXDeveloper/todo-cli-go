@@ -4,10 +4,22 @@
 # Variables
 BINARY_NAME=todo
 MAIN_FILES=main.go import.go
+VERSION ?= $(shell git describe --tags --always --dirty)
+BUILD_TIME = $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+GIT_COMMIT = $(shell git rev-parse HEAD)
+
+# Flags de build avec injection des variables
+LDFLAGS = -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X main.gitCommit=$(GIT_COMMIT)"
 
 # Commandes principales
 build: ## Compiler le binaire
-	go build -o $(BINARY_NAME) $(MAIN_FILES)
+	#go build -o $(BINARY_NAME) $(MAIN_FILES)
+	go build $(LDFLAGS) -o todo main.go import.go
+
+version: ## Afficher la version qui sera compilée
+	@echo "Version: $(VERSION)"
+	@echo "Build time: $(BUILD_TIME)"
+	@echo "Git commit: $(GIT_COMMIT)"
 
 test: ## Lancer tous les tests
 	go test -v

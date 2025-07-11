@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	version   = "dev"     // Version par défaut
+	version   = "dev version"     // Version par défaut
 	buildTime = "unknown" // Date de build
 	gitCommit = "unknown" // Hash du commit
 )
@@ -347,7 +347,7 @@ func validateDate(dateStr string) bool {
 
 // Usage affiche l'aide
 func Usage() {
-	fmt.Printf("Todo CLI Go v%s\n", version)
+	fmt.Printf("Todo CLI Go %s\n", version)
 	fmt.Printf("Build time: %s\n", buildTime)
 	fmt.Printf("Git commit: %s\n", gitCommit)
 
