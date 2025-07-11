@@ -24,7 +24,7 @@ jobs:
         go-version: '1.22'
 
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -44,7 +44,7 @@ jobs:
       run: make test-short
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: todo-linux-${{ github.sha }}
         path: todo
@@ -82,7 +82,7 @@ jobs:
         mv todo todo-darwin-amd64
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           todo-linux-amd64
@@ -107,4 +107,4 @@ jobs:
           ./todo-linux-amd64 version
           ```
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
