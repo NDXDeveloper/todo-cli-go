@@ -1,4 +1,4 @@
-# .github/workflows/build.yml - Avec Snap
+# .github/workflows/build.yml - Avec Snap et DEB
 name: Build Todo CLI Go
 
 on:
@@ -48,7 +48,7 @@ jobs:
         path: todo
         retention-days: 30
 
-  # Job pour releases avec binaires + snap
+  # Job pour releases avec binaires + snap + deb
   release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
@@ -88,6 +88,27 @@ jobs:
         # Vérifier les binaires créés
         ls -la todo-*
 
+    # Build du package DEB
+    - name: Build DEB package
+      run: |
+        # Installer nfpm
+        wget https://github.com/goreleaser/nfpm/releases/download/v2.43.0/nfpm_2.43.0_amd64.deb
+        sudo dpkg -i nfpm_2.43.0_amd64.deb
+
+        # Extraire la version du tag
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        VERSION=${TAG_NAME#v}  # Supprimer le 'v' du début
+
+        echo "Building DEB package for version: $VERSION"
+
+        # Remplacer la version dans nfpm.yaml et créer le package
+        sed "s/\${VERSION}/$VERSION/g" nfpm.yaml > nfpm-build.yaml
+        nfpm pkg --packager deb --config nfpm-build.yaml --target todo_${TAG_NAME}_amd64.deb
+
+        # Vérifier le package créé
+        ls -la *.deb
+        dpkg --info todo_${TAG_NAME}_amd64.deb
+
     # Build du Snap
     - name: Build Snap
       uses: snapcore/action-build@v1
@@ -97,7 +118,6 @@ jobs:
       run: |
         # Renommer le snap avec le nom du tag
         TAG_NAME=${GITHUB_REF#refs/tags/}
-        # ↓ CORRIGÉ : nom du snap est maintenant "todo"
         mv *.snap todo_${TAG_NAME}_amd64.snap
         ls -la *.snap
 
@@ -110,6 +130,7 @@ jobs:
           todo-windows-amd64.exe
           todo-darwin-amd64
           *.snap
+          *.deb
         generate_release_notes: true
         body: |
           ## 🚀 Todo CLI Go ${{ github.ref_name }}
@@ -125,6 +146,9 @@ jobs:
 
           #### Package Snap (Linux)
           - **Snap**: `todo_${{ github.ref_name }}_amd64.snap`
+
+          #### Package DEB (Ubuntu/Debian)
+          - **DEB**: `todo_${{ github.ref_name }}_amd64.deb`
 
           ### 🛠️ Installation
 
@@ -164,6 +188,26 @@ jobs:
 
           # Test d'accès aux clés USB (après connexion interface)
           todo export /media/username/USB_DRIVE/backup.csv
+          ```
+
+          #### Installation DEB (Ubuntu/Debian) - Accès complet système
+          ```bash
+          # Télécharger le fichier .deb
+          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo_${{ github.ref_name }}_amd64.deb
+
+          # Installer le package (gère automatiquement les dépendances)
+          sudo apt install ./todo_${{ github.ref_name }}_amd64.deb
+
+          # Ou avec dpkg (puis résoudre les dépendances si nécessaire)
+          sudo dpkg -i todo_${{ github.ref_name }}_amd64.deb
+          sudo apt-get install -f  # Résoudre les dépendances manquantes
+
+          # Utilisation directe - commande "todo" disponible globalement !
+          todo version
+          todo help
+
+          # Désinstallation propre
+          sudo apt remove todo
           ```
 
           #### Windows
@@ -206,6 +250,10 @@ jobs:
           wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo_${{ github.ref_name }}_amd64.snap
           sudo snap install --dangerous todo_${{ github.ref_name }}_amd64.snap
           sudo snap connect todo:removable-media
+
+          # Linux DEB : Installation simple
+          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo_${{ github.ref_name }}_amd64.deb
+          sudo apt install ./todo_${{ github.ref_name }}_amd64.deb
           ```
 
           ### ✨ Fonctionnalités
@@ -237,9 +285,13 @@ jobs:
           snap connections todo
           ```
 
-          ### 🎯 Avantage du Snap
+          ### 🎯 Avantages par format
 
-          Avec le package Snap, la commande `todo` est directement disponible dans le terminal - plus besoin de `todo-cli-go.todo` !
+          **Snap** : Confinement sécurisé, auto-updates, sandboxing
+          **DEB** : Installation native, accès système complet, familier
+          **Binaires** : Portables, aucune dépendance système
+
+          Avec tous les formats, la commande `todo` est directement disponible dans le terminal !
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
