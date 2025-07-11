@@ -1,5 +1,5 @@
 # snap/snapcraft.yaml - Confinement strict
-name: todo-cli-go
+name: todo  # ← CHANGER le nom du snap lui-même
 version: git
 summary: Gestionnaire de tâches moderne en ligne de commande
 description: |
@@ -13,12 +13,11 @@ description: |
   - Dates limites avec alertes visuelles
   - Interface colorée et intuitive
   - Stockage JSON portable
-  - Support des partages réseau
 
   Permissions requises:
   - home: Accès au répertoire utilisateur
   - removable-media: Accès aux clés USB et disques externes
-  - network: Accès aux partages réseau (SMB, NFS)
+  - network: Accès réseau basique
   - mount-observe: Observation des points de montage
 
 # Base système Ubuntu 22.04 LTS
@@ -39,45 +38,16 @@ architectures:
 
 # Applications exposées
 apps:
-  todo-cli-go:
-    command: bin/todo
-    # Plugs pour accès contrôlé aux ressources
-    plugs:
-      - home                    # Accès au répertoire home (~/)
-      - removable-media        # Accès aux clés USB (/media, /mnt)
-      - network                # Accès réseau pour partages distants
-      - network-bind           # Écoute réseau si nécessaire
-      - mount-observe          # Observer les points de montage
-    environment:
-      LC_ALL: C.UTF-8
-      LANG: C.UTF-8
-
-  # Alias court 'todo' (plus pratique)
   todo:
     command: bin/todo
     plugs:
       - home
       - removable-media
       - network
-      - network-bind
       - mount-observe
     environment:
       LC_ALL: C.UTF-8
       LANG: C.UTF-8
-
-# Définition des plugs personnalisés si nécessaire
-plugs:
-  # Accès étendu aux partages réseau
-  network-shares:
-    interface: system-files
-    read:
-      - /mnt
-      - /media
-      - /run/user/*/gvfs  # GNOME Virtual File System (partages réseau)
-    write:
-      - /mnt
-      - /media
-      - /run/user/*/gvfs
 
 # Build du snap
 parts:
@@ -128,8 +98,8 @@ parts:
     build-packages:
       - git
       - ca-certificates
-      - file              # ← AJOUTÉ pour la commande 'file'
-      - coreutils         # ← AJOUTÉ pour les utilitaires de base
+      - file
+      - coreutils
 
   # Métadonnées et fichiers supplémentaires
   metadata:

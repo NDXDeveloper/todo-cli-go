@@ -97,7 +97,8 @@ jobs:
       run: |
         # Renommer le snap avec le nom du tag
         TAG_NAME=${GITHUB_REF#refs/tags/}
-        mv *.snap todo-cli-go_${TAG_NAME}_amd64.snap
+        # ↓ CORRIGÉ : nom du snap est maintenant "todo"
+        mv *.snap todo_${TAG_NAME}_amd64.snap
         ls -la *.snap
 
     # Créer la release avec tous les formats
@@ -123,7 +124,7 @@ jobs:
           - **macOS**: `todo-darwin-amd64`
 
           #### Package Snap (Linux)
-          - **Snap**: `todo-cli-go_${{ github.ref_name }}_amd64.snap`
+          - **Snap**: `todo_${{ github.ref_name }}_amd64.snap`
 
           ### 🛠️ Installation
 
@@ -145,23 +146,21 @@ jobs:
           #### Installation Snap (Linux) - Confinement strict
           ```bash
           # Télécharger le fichier .snap
-          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-cli-go_${{ github.ref_name }}_amd64.snap
+          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo_${{ github.ref_name }}_amd64.snap
 
           # Installer le snap (mode dangerous car non publié sur store)
-          sudo snap install --dangerous todo-cli-go_${{ github.ref_name }}_amd64.snap
+          sudo snap install --dangerous todo_${{ github.ref_name }}_amd64.snap
 
           # Connecter les interfaces pour accès étendus
-          sudo snap connect todo-cli-go:removable-media     # Clés USB
-          sudo snap connect todo-cli-go:mount-observe       # Points de montage
-          sudo snap connect todo-cli-go:network-bind        # Réseau (optionnel)
+          sudo snap connect todo:removable-media     # Clés USB
+          sudo snap connect todo:mount-observe       # Points de montage
 
           # Vérifier les connexions
-          snap connections todo-cli-go
+          snap connections todo
 
-          # Utilisation
-          todo-cli-go version
-          # Ou avec l'alias court
+          # Utilisation directe - commande "todo" disponible !
           todo version
+          todo help
 
           # Test d'accès aux clés USB (après connexion interface)
           todo export /media/username/USB_DRIVE/backup.csv
@@ -204,9 +203,9 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-windows-amd64.exe" -OutFile "C:\tools\todo.exe"
 
           # Linux Snap : Installation avec permissions
-          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-cli-go_${{ github.ref_name }}_amd64.snap
-          sudo snap install --dangerous todo-cli-go_${{ github.ref_name }}_amd64.snap
-          sudo snap connect todo-cli-go:removable-media
+          wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo_${{ github.ref_name }}_amd64.snap
+          sudo snap install --dangerous todo_${{ github.ref_name }}_amd64.snap
+          sudo snap connect todo:removable-media
           ```
 
           ### ✨ Fonctionnalités
@@ -227,19 +226,20 @@ jobs:
           **Interfaces manuelles (optionnelles) :**
           ```bash
           # Pour accès aux clés USB et disques externes
-          sudo snap connect todo-cli-go:removable-media
+          sudo snap connect todo:removable-media
 
           # Pour observer les points de montage (partages réseau)
-          sudo snap connect todo-cli-go:mount-observe
-
-          # Pour écoute réseau (si nécessaire)
-          sudo snap connect todo-cli-go:network-bind
+          sudo snap connect todo:mount-observe
           ```
 
           **Vérification des permissions :**
           ```bash
-          snap connections todo-cli-go
+          snap connections todo
           ```
+
+          ### 🎯 Avantage du Snap
+
+          Avec le package Snap, la commande `todo` est directement disponible dans le terminal - plus besoin de `todo-cli-go.todo` !
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
