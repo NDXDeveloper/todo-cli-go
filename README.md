@@ -400,3 +400,18 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 ⭐ **N'hésitez pas à mettre une étoile si ce projet vous plaît !**
 
 [![GitHub stars](https://img.shields.io/github/stars/NDXDeveloper/todo-cli-go?style=social)](https://github.com/NDXDev/todo-cli-go/stargazers)
+
+---
+
+<div align="center">
+  <img src="./screenshots/capture-cli-1.png" width="45%" />
+  <img src="./screenshots/capture-cli-2.png" width="45%" />
+</div>
+
+---
+
+![Description image 1](./screenshots/capture-cli-1.png)
+![Description image 2](./screenshots/capture-cli-2.png)
+
+---
+
