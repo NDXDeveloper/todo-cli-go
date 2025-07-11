@@ -48,6 +48,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
 
+    # Permissions spécifiques pour ce job
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -61,17 +65,22 @@ jobs:
 
     - name: Build release binaries
       run: |
+        echo "Building release binaries..."
+
         # Linux
         make build
         mv todo todo-linux-amd64
 
         # Windows
         GOOS=windows GOARCH=amd64 make build
-        mv todo todo-windows-amd64.exe
+        mv todo.exe todo-windows-amd64.exe 2>/dev/null || mv todo todo-windows-amd64.exe
 
         # macOS
         GOOS=darwin GOARCH=amd64 make build
         mv todo todo-darwin-amd64
+
+        # Vérifier les binaires créés
+        ls -la todo-*
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -80,23 +89,32 @@ jobs:
           todo-linux-amd64
           todo-windows-amd64.exe
           todo-darwin-amd64
+        generate_release_notes: true
         body: |
-          ## Todo CLI Go ${{ github.ref_name }}
+          ## 🚀 Todo CLI Go ${{ github.ref_name }}
 
-          ### Features
-          - Version injection system
-          - Cross-platform binaries
+          Gestionnaire de tâches en ligne de commande avec injection de version automatique.
 
-          ### Download
+          ### 📦 Téléchargements
           - **Linux**: `todo-linux-amd64`
           - **Windows**: `todo-windows-amd64.exe`
           - **macOS**: `todo-darwin-amd64`
 
-          ### Usage
+          ### 🛠️ Installation rapide
           ```bash
-          # Rendre exécutable (Linux/macOS)
+          # Linux/macOS
           chmod +x todo-linux-amd64
-          ./todo-linux-amd64 version
+          ./todo-linux-amd64 help
+
+          # Ou déplacer vers /usr/local/bin pour usage global
+          sudo mv todo-linux-amd64 /usr/local/bin/todo
           ```
+
+          ### ✨ Fonctionnalités
+          - Gestion complète des tâches (add, list, done, remove, edit)
+          - Export/Import CSV
+          - Tags et priorités
+          - Filtrage avancé
+          - Version injectée automatiquement
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
