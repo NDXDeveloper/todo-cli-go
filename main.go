@@ -588,6 +588,12 @@ func main() {
 		}
 
 		fmt.Printf("📄 Export terminé : %s\n", filename)
+	// Dans le switch case des commandes
+	case "version":
+		fmt.Printf("Todo CLI Go v%s\n", version)
+		fmt.Printf("Build time: %s\n", buildTime)
+		fmt.Printf("Git commit: %s\n", gitCommit)
+		return
 
 	case "help", "-h", "--help":
 		Usage()
