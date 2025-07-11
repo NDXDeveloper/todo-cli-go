@@ -1,9 +1,10 @@
- 
+# .github/workflows/build.yml
 name: Build Todo CLI Go
 
 on:
   push:
     branches: [ main, develop ]
+    tags: [ 'v*' ]  # Déclenche sur tous les tags v*
   pull_request:
     branches: [ main ]
 
@@ -14,6 +15,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Important pour récupérer l'historique Git complet
 
     - name: Setup Go
       uses: actions/setup-go@v4
@@ -28,43 +31,80 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Build with auto-version
-      run: |
-        chmod +x build.sh
-        ./build.sh
-
-    - name: Run tests
-      run: go test -v ./...
+    - name: Build with version injection
+      run: make build
 
     - name: Test binary
       run: |
         ./todo version
+        echo "--- Help output ---"
         ./todo help
+
+    - name: Run tests
+      run: make test-short
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: todo-linux
+        name: todo-linux-${{ github.sha }}
         path: todo
+        retention-days: 30
 
-  test:
+  # Job séparé pour les releases avec tags
+  release:
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
 
-    - name: Run full test suite
+    - name: Build release binaries
       run: |
-        go test -v -race -coverprofile=coverage.out ./...
+        # Linux
+        make build
+        mv todo todo-linux-amd64
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
+        # Windows
+        GOOS=windows GOARCH=amd64 make build
+        mv todo todo-windows-amd64.exe
+
+        # macOS
+        GOOS=darwin GOARCH=amd64 make build
+        mv todo todo-darwin-amd64
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
       with:
-        file: ./coverage.out
+        files: |
+          todo-linux-amd64
+          todo-windows-amd64.exe
+          todo-darwin-amd64
+        body: |
+          ## Todo CLI Go ${{ github.ref_name }}
+
+          ### Features
+          - Version injection system
+          - Cross-platform binaries
+
+          ### Download
+          - **Linux**: `todo-linux-amd64`
+          - **Windows**: `todo-windows-amd64.exe`
+          - **macOS**: `todo-darwin-amd64`
+
+          ### Usage
+          ```bash
+          # Rendre exécutable (Linux/macOS)
+          chmod +x todo-linux-amd64
+          ./todo-linux-amd64 version
+          ```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
