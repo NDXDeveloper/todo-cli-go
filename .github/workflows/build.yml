@@ -48,7 +48,7 @@ jobs:
         path: todo
         retention-days: 30
 
-  # Job pour releases avec binaires + snap + deb
+  # Job pour releases avec binaires + snap + deb + installateurs Windows
   release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
@@ -109,6 +109,8 @@ jobs:
         ls -la *.deb
         dpkg --info todo_${TAG_NAME}_amd64.deb
 
+        rm nfpm_2.43.0_amd64.deb
+
     # Build du Snap
     - name: Build Snap
       uses: snapcore/action-build@v1
@@ -121,6 +123,50 @@ jobs:
         mv *.snap todo_${TAG_NAME}_amd64.snap
         ls -la *.snap
 
+
+    # Build des installateurs Windows avec NSIS
+    - name: Build Windows Installers
+      run: |
+        echo "Installing NSIS..."
+        sudo apt-get update
+        sudo apt-get install -y nsis
+
+        echo "Building Windows installers..."
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        VERSION=${TAG_NAME#v}
+
+        # Copier le binaire Windows dans le dossier nsis pour les scripts
+        cp todo-windows-amd64.exe nsis/
+
+        # Se placer dans le dossier nsis
+        cd nsis
+
+        # Créer les scripts NSIS avec la bonne version
+        sed "s/VERSIONBUILD 9/VERSIONBUILD ${VERSION##*.}/g; s/VERSIONMINOR 0/VERSIONMINOR ${VERSION%.*}/ ; s/VERSIONMAJOR 0/VERSIONMAJOR ${VERSION%%.*}/" installer_user.nsi > installer-user-${TAG_NAME}.nsi
+        sed "s/VERSIONBUILD 9/VERSIONBUILD ${VERSION##*.}/g; s/VERSIONMINOR 0/VERSIONMINOR ${VERSION%.*}/ ; s/VERSIONMAJOR 0/VERSIONMAJOR ${VERSION%%.*}/" installer_admin.nsi > installer-admin-${TAG_NAME}.nsi
+
+        # Compiler les installateurs
+        echo "Compiling user installer..."
+        makensis installer-user-${TAG_NAME}.nsi
+
+        echo "Compiling admin installer..."
+        makensis installer-admin-${TAG_NAME}.nsi
+
+        # Renommer les installateurs générés
+        mv todo-setup-noadmin-*.exe todo-setup-user-${TAG_NAME}.exe
+        mv todo-setup-admin-*.exe todo-setup-admin-${TAG_NAME}.exe
+
+        # Déplacer les installateurs vers la racine
+        mv *.exe ../
+
+        rm ../todo-windows-amd64.exe
+
+
+        # Retourner à la racine et vérifier
+        cd ..
+        ls -la *.exe
+        file *.exe
+
     # Créer la release avec tous les formats
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -131,6 +177,7 @@ jobs:
           todo-darwin-amd64
           *.snap
           *.deb
+          *.exe
         generate_release_notes: true
         body: |
           ## 🚀 Todo CLI Go ${{ github.ref_name }}
@@ -141,8 +188,11 @@ jobs:
 
           #### Binaires classiques
           - **Linux**: `todo-linux-amd64`
-          - **Windows**: `todo-windows-amd64.exe`
           - **macOS**: `todo-darwin-amd64`
+
+          #### Installateurs Windows 🆕
+          - **Installation utilisateur** (sans admin): `todo-setup-user-${{ github.ref_name }}.exe`
+          - **Installation système** (admin requis): `todo-setup-admin-${{ github.ref_name }}.exe`
 
           #### Package Snap (Linux)
           - **Snap**: `todo_${{ github.ref_name }}_amd64.snap`
@@ -150,7 +200,35 @@ jobs:
           #### Package DEB (Ubuntu/Debian)
           - **DEB**: `todo_${{ github.ref_name }}_amd64.deb`
 
-          ### 🛠️ Installation
+          ### 🛠️ Installation Windows
+
+          #### Option 1: Installateur utilisateur (recommandé)
+          ```powershell
+          # Télécharger et exécuter (aucun droit admin requis)
+          # Double-clic sur: todo-setup-user-${{ github.ref_name }}.exe
+          ```
+          - ✅ Installation dans `%LOCALAPPDATA%`
+          - ✅ PATH utilisateur configuré automatiquement
+          - ✅ Aucun droit administrateur requis
+          - ✅ Désinstallation propre
+
+          #### Option 2: Installateur système
+          ```powershell
+          # Télécharger et exécuter (droits admin requis)
+          # Clic-droit → "Exécuter en tant qu'administrateur" sur: todo-setup-admin-${{ github.ref_name }}.exe
+          ```
+          - ✅ Installation dans `C:\Program Files`
+          - ✅ PATH système configuré pour tous les utilisateurs
+          - ✅ Installation centralisée
+
+          #### Option 3: Binaire portable
+          ```powershell
+          # Télécharger todo-windows-amd64.exe
+          # Placer dans un dossier de votre choix
+          # Ajouter manuellement au PATH
+          ```
+
+          ### 🛠️ Installation Linux / macOS
 
           #### Linux / macOS
           ```bash
@@ -210,41 +288,10 @@ jobs:
           sudo apt remove todo
           ```
 
-          #### Windows
-          ```powershell
-          # 1. Créer un dossier pour vos binaires (une seule fois)
-          mkdir C:\tools
-
-          # 2. Déplacer le binaire
-          move todo-windows-amd64.exe C:\tools\todo.exe
-
-          # 3. Ajouter au PATH (PowerShell Admin requis)
-          $env:PATH += ";C:\tools"
-
-          # 4. Rendre permanent (PowerShell Admin)
-          [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\tools", [EnvironmentVariableTarget]::Machine)
-
-          # 5. Redémarrer PowerShell/CMD et tester
-          todo help
-          ```
-
-          #### Alternative Windows (Interface graphique)
-          ```
-          1. Déplacer todo-windows-amd64.exe vers C:\tools\todo.exe
-          2. Touche Windows + R → sysdm.cpl → Avancé
-          3. Variables d'environnement → PATH (système) → Modifier
-          4. Ajouter : C:\tools
-          5. OK → OK → Redémarrer terminal
-          6. Tester : todo help
-          ```
-
           #### Installation rapide (tous OS)
           ```bash
           # Linux/macOS : Binaire direct
           curl -L https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-linux-amd64 -o todo && chmod +x todo && sudo mv todo /usr/local/bin/
-
-          # Windows (PowerShell) : Téléchargement + installation
-          Invoke-WebRequest -Uri "https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo-windows-amd64.exe" -OutFile "C:\tools\todo.exe"
 
           # Linux Snap : Installation avec permissions
           wget https://github.com/NDXDeveloper/todo-cli-go/releases/download/${{ github.ref_name }}/todo_${{ github.ref_name }}_amd64.snap
@@ -289,9 +336,7 @@ jobs:
 
           **Snap** : Confinement sécurisé, auto-updates, sandboxing
           **DEB** : Installation native, accès système complet, familier
-          **Binaires** : Portables, aucune dépendance système
 
-          Avec tous les formats, la commande `todo` est directement disponible dans le terminal !
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
